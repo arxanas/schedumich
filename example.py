@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import logging
 
-import umichsched.scheduler as scheduler
-import umichsched.umich as umich
+import schedumich.scheduler as scheduler
+import schedumich.umich as umich
 
 
 def get_api_key():

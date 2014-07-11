@@ -1,9 +1,9 @@
 About
 -----
 
-`umichsched` is a module to get class scheduling information from the [umich
+`schedumich` is a module to get class scheduling information from the [umich
 API][umich-api] and to use it to form a class schedule. In particular,
-`umichsched` takes into account the fact that classes on different campuses
+`schedumich` takes into account the fact that classes on different campuses
 can't be scheduled consecutively, which other scheduling programs probably
 don't know about.
 
@@ -12,7 +12,7 @@ don't know about.
 Requirements
 ------------
 
-`umichsched` requires Python 3 and the [requests][requests] module.
+`schedumich` requires Python 3 and the [requests][requests] module.
 
   [requests]: http://docs.python-requests.org/en/latest/
 
@@ -35,7 +35,7 @@ return whether or not that schedule is acceptable.
 Setting up the API
 ------------------
 
-`umichsched` needs a umich API key, which you can get from the [API
+`schedumich` needs a umich API key, which you can get from the [API
 site][umich-api], with the "Schedule of Classes" and "Buildings" sources.
 
  1. Go to Applications and make a new application. You only need to fill in the
