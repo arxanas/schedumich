@@ -1,15 +1,27 @@
 #!/usr/bin/env python3
 import collections
+import contextlib
 import datetime
 import functools
 import json
 import logging
 import operator
+import pickle
 import requests
 import time
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+
+# Sometimes (read: often) the class location and building abbreviation may not
+# sync up. The key is the class location and the value is the building
+# abbreviation.
+EXTRA_ABBREVIATIONS = {
+    "GFL": "GFLAB",
+    "BEYSTER": "BYSTR",
+    "STAMPS": "STAMP",
+}
 
 
 class retry(object):
@@ -254,16 +266,16 @@ class Building:
 
         section_building = section.info["Meeting"]["Location"].split()[-1]
 
-        # Sometimes the class location and building abbreviation may not sync
-        # up. The key is the class location and the value is the building
-        # abbreviation.
-        extra_abbreviations = {
-            "GFL": "GFLAB",
-            "BEYSTER": "BYSTR",
-        }
-
         # The building "ARR" means location to be arranged.
         if section_building == "ARR":
+            return None
+
+        # We get UMMA AUD instead of AUD UMMA, so we think there's a building
+        # called "AUD".
+        if "UMMA" in section.info["Meeting"]["Location"]:
+            section_building = "UMMA"
+
+        if section_building == "BUS":
             return None
 
         # Go through each campus and see if it has the given building.
@@ -276,8 +288,8 @@ class Building:
                     return Building(j)
 
                 if (
-                    section_building in extra_abbreviations and
-                    j["Abbreviation"] == extra_abbreviations[section_building]
+                    section_building in EXTRA_ABBREVIATIONS and
+                    j["Abbreviation"] == EXTRA_ABBREVIATIONS[section_building]
                 ):
                     return Building(j)
 
@@ -393,7 +405,8 @@ class SectionGroup:
 
         self.section_name = section_list[0].name
         for i in section_list:
-            assert i.name == self.section_name, "Not all sections have the same name."
+            assert i.name == self.section_name, \
+                "Not all sections have the same name."
 
         self.section_types = set(
             i.section_type
@@ -666,3 +679,64 @@ class Section:
         )
         info = info["getSOCSectionListByNbrResponse"]["ClassOffered"]
         return cls(info)
+
+
+class FileBackedCache:
+    """Cache which saves to a file, which is used for caching API requests."""
+
+    def __init__(self, file_name):
+        """Constructor.
+
+        file_name: The name of the cache file.
+
+        """
+        self.file_name = file_name
+
+    def __getitem__(self, key):
+        """Get a value by key from the cache.
+
+        key: The key corresponding to the value..
+
+        """
+        return self.cache[key]
+
+    def __setitem__(self, key, value):
+        """Cache a value.
+
+        key: The key for the value.
+        value: The value.
+
+        """
+        self.cache[key] = value
+
+    def __contains__(self, key):
+        """Returns whether or not there is an item with key `key`.
+
+        key: The key of the item.
+
+        """
+        return key in self.cache
+
+    def load(self):
+        """Load the cache from disk."""
+        try:
+            with open(self.file_name, "rb") as cache_file:
+                self.cache = pickle.load(cache_file)
+        except IOError:
+            self.cache = {}
+
+    def save(self):
+        """Save the cache to disk."""
+        with open(self.file_name, "wb") as cache_file:
+            pickle.dump(self.cache, cache_file)
+
+
+@contextlib.contextmanager
+def make_cache(file_name):
+    """Makes a cache which persists to disk."""
+    cache = FileBackedCache(file_name)
+    cache.load()
+    try:
+        yield cache
+    finally:
+        cache.save()
