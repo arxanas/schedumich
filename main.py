@@ -82,15 +82,15 @@ class ClassPicker:
                 if not s1_building or not s2_building:
                     continue
 
-                # If they're on the same campus, we can't have a timing conflict
-                # between them.
+                # If they're on the same campus, we can't have a timing
+                # conflict between them.
                 if s1_building.campus_name == s2_building.campus_name:
                     continue
 
                 # If they're not on the same day, we can't have a timing
                 # conflict.
                 if not(
-                    set(s1.meeting_time.day_list) & 
+                    set(s1.meeting_time.day_list) &
                     set(s2.meeting_time.day_list)
                 ):
                     continue
@@ -142,8 +142,7 @@ class ClassPicker:
         def __init__(self, maximum_section_length):
             # The width of a column in the schedule frame.
             self.column_width = (
-                maximum_section_length + 
-               (2 * self.BLOCK_PADDING)
+                maximum_section_length + (2 * self.BLOCK_PADDING)
             )
 
             self.frame_width = (self.column_width * len(self.DAYS)) + 1
@@ -227,7 +226,6 @@ class ClassPicker:
                     column,
                 ), section.section)
 
-
         def _draw_box(self, top_left, bottom_right):
             """Draws a box from the top left to bottom right corner.
 
@@ -273,9 +271,9 @@ class ClassPicker:
                 if start_point[1] < end_point[1]:
                     d_column = 1
                 assert d_row or d_column, \
-                       "Could not figure out which direction to go " \
-                       "when drawing a line."
-                
+                    "Could not figure out which direction to go " \
+                    "when drawing a line."
+
                 # Apply the delta and draw the character.
                 current_point = (
                     current_point[0] + d_row,
@@ -436,4 +434,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -11,6 +11,7 @@ import time
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 class retry(object):
     """Handles retrying the request.
 
@@ -52,7 +53,7 @@ class retry(object):
                     # to catch.
 
                     logging.info(
-                        "Function '{func}' failed with {error}: '{message}'. " \
+                        "Function '{func}' failed with {error}: '{message}'. "
                         "{remaining_tries} tries left.".format(
                             func=func.__name__,
                             error=e.__class__.__name__,
@@ -70,6 +71,7 @@ class retry(object):
                     # Otherwise, sleep and try again.
                     time.sleep(self.wait_time)
         return wrapped
+
 
 class BaseAPI:
     """Thin wrapper around a umich API.
@@ -125,8 +127,8 @@ class BaseAPI:
             self._drop_old_requests()
 
             logging.info(
-                "Request made at time {time}. " \
-                "Recent requests: {num_requests}. " \
+                "Request made at time {time}. "
+                "Recent requests: {num_requests}. "
                 "Time until next request: {next_request_time}".format(
                     time=time.time(),
                     num_requests=len(self.request_times),
@@ -213,14 +215,16 @@ class Building:
         self.info = info
 
     def __repr__(self):
-        return "<Building" \
-               " Abbrev='{abbreviation}'" \
-               " Name='{name}'" \
-               " Campus='{campus}'" \
-               ">".format(
-            abbreviation=self.abbreviation,
-            name=self.name,
-            campus=self.campus_name
+        return (
+            "<Building"
+            " Abbrev='{abbreviation}'"
+            " Name='{name}'"
+            " Campus='{campus}'"
+            ">".format(
+                abbreviation=self.abbreviation,
+                name=self.name,
+                campus=self.campus_name
+            )
         )
 
     @property
@@ -239,7 +243,7 @@ class Building:
     def from_section(cls, building_api, section):
         """Returns the building where a section is taking place.
 
-        If the section doesn't have a location decided (that is, it's at 
+        If the section doesn't have a location decided (that is, it's at
         "ARR", to be arranged), returns `None`.
 
         building_api: The building API.
@@ -255,6 +259,7 @@ class Building:
         # abbreviation.
         extra_abbreviations = {
             "GFL": "GFLAB",
+            "BEYSTER": "BYSTR",
         }
 
         # The building "ARR" means location to be arranged.
@@ -269,16 +274,15 @@ class Building:
             for j in buildings:
                 if j["Abbreviation"] == section_building:
                     return Building(j)
-                
+
                 if (
                     section_building in extra_abbreviations and
                     j["Abbreviation"] == extra_abbreviations[section_building]
                 ):
                     return Building(j)
 
-        print(section.info)
         raise RuntimeError(
-            "Could not find building for section {section}, " \
+            "Could not find building for section {section}, "
             "which is in building {building}.".format(
                 section=section,
                 building=section_building
@@ -320,14 +324,23 @@ class Term:
                     SearchCriteria=class_code
                 )
             )
-            for i in info["searchSOCClassesResponse"]["SearchResult"]:
+            # They return a list if there are multiple results, but a dict (of
+            # the result) if there is only one result.
+            search_results = info["searchSOCClassesResponse"]["SearchResult"]
+            if isinstance(search_results, dict):
+                search_results = [search_results]
+            for i in search_results:
                 yield i["ClassNumber"]
 
         sections = []
         for i in get_all_class_numbers():
             section = Section.from_class_number(self.class_api, self, i)
             if section.code == class_code:
-                sections.append(Section.from_class_number(self.class_api, self, i))
+                sections.append(Section.from_class_number(
+                    self.class_api,
+                    self,
+                    i
+                ))
         return SectionGroup(sections)
 
     @classmethod
@@ -391,9 +404,14 @@ class SectionGroup:
 
     def __repr__(self):
         """Repr."""
-        return "<SectionGroup Name={section_name} Sections={section_types}>".format(
-            section_name=self.section_name,
-            section_types=self.section_types
+        return (
+            "<SectionGroup"
+            " Name={section_name}"
+            " Sections={section_types}"
+            ">".format(
+                section_name=self.section_name,
+                section_types=self.section_types
+            )
         )
 
 
@@ -424,16 +442,16 @@ class MeetingTime:
                 minute=time.tm_min
             )
 
-        return """
-<MeetingTime \
-Days={days} \
-Begin={time_begin} \
-End={time_end}\
->
-""".strip().format(
-            days="".join(self.day_list),
-            time_begin=time_as_string(self.time_begin),
-            time_end=time_as_string(self.time_end)
+        return (
+            "<MeetingTime"
+            " Days={days}"
+            " Begin={time_begin}"
+            " End={time_end}"
+            ">".format(
+                days="".join(self.day_list),
+                time_begin=time_as_string(self.time_begin),
+                time_end=time_as_string(self.time_end)
+            )
         )
 
     @property
@@ -472,7 +490,7 @@ End={time_end}\
         """Constructor.
 
         days: The days the section meets, like "MoWe".
-        time: The time the section meets, like 10:00 AM - 12:00 PM.
+        time: The time the section meets, like "10:00AM - 12:00PM".
 
         """
         # Split the string into two-character snippets.
@@ -486,7 +504,7 @@ End={time_end}\
         def convert_time(time_str):
             time_str = time_str.strip()
             return time.strptime(time_str, "%I:%M%p")
-        time_begin, time_end = map(convert_time, times.split("-"))
+        time_begin, time_end = list(map(convert_time, times.split("-")))
 
         return cls(
             day_list,
@@ -519,6 +537,7 @@ End={time_end}\
         # section, they conflict.
         return times[1][0] < times[0][1]
 
+
 class Section:
     """A single section in a SectionGroup.
 
@@ -535,18 +554,20 @@ class Section:
 
     def __repr__(self):
         """Repr."""
-        return "<Section"             \
-               " Name='{name}'"       \
-               " Code='{code}'"       \
-               " Section='{section}'" \
-               " Days={days}"         \
-               " Times={times}"       \
-               ">".format(
-            name=self.name,
-            code=self.code,
-            section=self.section,
-            days=self.days,
-            times=self.times
+        return (
+            "<Section"
+            " Name='{name}'"
+            " Code='{code}'"
+            " Section='{section}'"
+            " Days={days}"
+            " Times={times}"
+            ">".format(
+                name=self.name,
+                code=self.code,
+                section=self.section,
+                days=self.days,
+                times=self.times
+            )
         )
 
     @property
@@ -570,7 +591,14 @@ class Section:
     @property
     def meeting_time(self):
         """The `MeetingTime` for the section."""
-        return MeetingTime.from_days_and_times(self.days, self.times)
+        try:
+            return self._meeting_time_cached
+        except AttributeError:
+            self._meeting_time_cached = MeetingTime.from_days_and_times(
+                self.days,
+                self.times
+            )
+            return self._meeting_time_cached
 
     @property
     def name(self):
@@ -638,4 +666,3 @@ class Section:
         )
         info = info["getSOCSectionListByNbrResponse"]["ClassOffered"]
         return cls(info)
-
