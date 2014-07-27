@@ -9,6 +9,12 @@ don't know about.
 
   [umich-api]: http://developer.it.umich.edu/
 
+Here's some screenshots of the example script in action:
+
+![Screenshot 1](screenshots/screenshot-1.png?raw=true)
+
+![Screenshot 2](screenshots/screenshot-2.png?raw=true)
+
 Requirements
 ------------
 
