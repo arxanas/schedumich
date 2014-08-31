@@ -364,12 +364,21 @@ class Term:
 
         """
         terms = class_api.make_request("/Terms")
-        return cls(class_api, next(
-            i
-            for i
-            in terms["getSOCTermsResponse"]["Term"]
-            if i["TermShortDescr"] == season
-        ))
+        term_info = terms["getSOCTermsResponse"]["Term"]
+
+        # If there's only one term, it looks like it will return only a single
+        # value instead of a list of values.
+        if isinstance(term_info, list):
+            term = next(
+                i
+                for i
+                in terms["getSOCTermsResponse"]["Term"]
+                if i["TermShortDescr"] == season
+            )
+        else:
+            term = term_info
+
+        return cls(class_api, term)
 
     @classmethod
     def from_term_code(cls, class_api, term_code):
