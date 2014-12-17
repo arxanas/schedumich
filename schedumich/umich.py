@@ -255,8 +255,7 @@ class Building:
     def from_section(cls, building_api, section):
         """Returns the building where a section is taking place.
 
-        If the section doesn't have a location decided (that is, it's at
-        "ARR", to be arranged), returns `None`.
+        If the section doesn't have a location decided, returns `None`.
 
         building_api: The building API.
         section: The class section.
@@ -264,15 +263,15 @@ class Building:
         """
         campuses = building_api.make_request("/Campuses")
 
-        section_building = section.info["Meeting"]["Location"].split()[-1]
+        section_location = section._get_meeting()["Location"]
+        section_building = section_location.split()[-1]
 
-        # The building "ARR" means location to be arranged.
-        if section_building == "ARR":
+        if section_building in ["ARR", "TBA"]:
             return None
 
         # We get UMMA AUD instead of AUD UMMA, so we think there's a building
         # called "AUD".
-        if "UMMA" in section.info["Meeting"]["Location"]:
+        if "UMMA" in section_location:
             section_building = "UMMA"
 
         if section_building == "BUS":
@@ -605,10 +604,28 @@ class Section:
             section_number=self.section_number
         )
 
+    def _get_meeting(self):
+        """For the time being, there's a bug in which a class may have multiple
+        meeting times, which is not what we expected. Here, we take the first
+        in that case.
+
+        """
+        meetings = self.info["Meeting"]
+        if isinstance(meetings, list):
+            logger.warning(
+                "For class '{}', expected Meeting from the API to be a single "
+                "dict, but got a list of dicts instead. Using the first "
+                "one.".format(
+                    self.code
+                )
+            )
+            meetings = meetings[0]
+        return meetings
+
     @property
     def days(self):
         """The days on which the section meets, like "MoWeFr"."""
-        return self.info["Meeting"]["Days"]
+        return self._get_meeting()["Days"]
 
     @property
     def meeting_time(self):
@@ -662,7 +679,7 @@ class Section:
         There's no guarantee on exactly how the date is formatted.
 
         """
-        return self.info["Meeting"]["Times"]
+        return self._get_meeting()["Times"]
 
     @classmethod
     def from_class_number(cls, class_api, term, class_number):
