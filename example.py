@@ -27,17 +27,26 @@ class Input:
         """Get the season for the term to enroll in."""
         return "FA 2014"
 
+# Modify to suit:
 LUNCH = umich.MeetingTime.from_days_and_times(
     "MoTuWeThFr",
     "11:00AM - 12:00PM"
 )
+SLEEP = umich.MeetingTime.from_days_and_times(
+    "MoTuWeThrFr",
+    "1:00AM - 10:00AM"
+)
+# additional_times = [LUNCH, SLEEP]
+additional_times = []
 
 
-def doesnt_conflict_with_lunch(candidate):
-    for section in candidate:
-        if section.meeting_time.conflicts_with(LUNCH):
-            return False
-    return True
+def doesnt_conflict_with(time_period):
+    def ret(candidate):
+        return not any(
+            section.meeting_time.conflicts_with(time_period)
+            for section in candidate
+        )
+    return ret
 
 
 def main():
@@ -60,8 +69,9 @@ def main():
             class_picker = scheduler.ClassPicker(class_api, building_api)
             schedules = class_picker.pick_sections(section_group_names, season)
 
-            # Add our lunchtime.
-            class_picker.add_criterion(doesnt_conflict_with_lunch)
+            # Add additional criteria.
+            for i in additional_times:
+                class_picker.add_criterion(doesnt_conflict_with(i))
 
             # Display all the schedules to the user, one-by-one.
             for i in schedules:
