@@ -1,5 +1,8 @@
 from distutils.core import setup
 
+with open("requirements.txt") as f:
+    requirements = f.readlines()
+
 if __name__ == "__main__":
     setup(
         name="schedumich",
@@ -9,5 +12,6 @@ if __name__ == "__main__":
         author="Waleed Khan",
         author_email="me@waleedkhan.name",
         url="https://github.com/arxanas/schedumich",
-        license="MIT"
+        license="MIT",
+        install_requires=requirements
     )
